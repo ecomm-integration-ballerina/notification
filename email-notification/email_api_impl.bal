@@ -25,34 +25,55 @@ public function addNotification (http:Request req, Notification notification)
     messageRequest.cc = notification.cc;
     messageRequest.subject = notification.subject;
     
-    string cause = notification.cause;
+    string targetParty = notification.targetResponse.party;
+    string sourceParty = notification.sourceRequest.party;
+    string message = notification.message;
+    xml intro = xml `<div id="cause"><h4>{{message}}.</h4></div>`;
 
-    xml causeTable;
-    if (cause == "Network Failure") {
-        causeTable = xml `<tr>
-                <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Failure</td>
-				<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td>
-				<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td>
-				<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td>
-				<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">x</td>
-            </tr>`;
+    string[] parties = notification.parties;
+    xml causeHeaderTable = xml `<tr><td width="50" style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td></tr>`;
+    xml causeTable = xml `<tr><td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Failure</td></tr>`;
+    foreach i, party in parties {
+        xml td;
+        if (party == targetParty) {
+            td = xml `<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">x</td>`;
+        } else {
+            td = xml `<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td>`;
+        }
+        causeTable.setChildren(causeTable.* + td);
+
+        td = xml `<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{party}}</td>`;
+        causeHeaderTable.setChildren(causeHeaderTable.* + td);
     }
 
+    xml targetResponseTable = xml `<table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
+            <tr> 
+                <td width="50" style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">HTTP SC</td>
+				<td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.targetResponse.sc}}</td>
+            </tr>	
+			<tr> 
+                <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Payload</td>
+				<td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.targetResponse.payload}}</td>
+            </tr>
+        </table>`;
+
+    xml sourceRequestTable = xml `<table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
+            <tr> 
+                <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Payload</td>
+				<td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.sourceRequest.payload}}</td>
+            </tr>
+        </table>`;
+
     xml body = xml `<html>
-            <head>
-                <meta http-equiv="content-type" content="text/html"/>
-            </head>
+            <head><meta http-equiv="content-type" content="text/html"/></head>
             <body>
+                {{intro}}
                 <table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
-                    <tr>
-                        <td width="50" style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td>
-                        <td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">BQ</td>
-                        <td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">EF</td>
-                        <td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">WSO2</td>
-                        <td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Network</td>
-                    </tr>
+                    {{causeHeaderTable}}
                     {{causeTable}}
                 </table>
+                <div id="res"><h4>Response from {{targetParty}} to {{sourceParty}}</h4>{{targetResponseTable}}</div>
+                <div id="req"><h4>Request from {{sourceParty}} to {{targetParty}} </h4>{{sourceRequestTable}}</div>
             </body>
         </html>`;
 
