@@ -4,7 +4,7 @@ import ballerina/io;
 import ballerina/config;
 
 endpoint http:Listener notificationListener {
-    port: 8280
+    port: 8289
 };
 
 @http:ServiceConfig {

@@ -2,6 +2,7 @@ public type Notification record {
     string[] parties,
     string recipient,
     string cc,
+    string failedParty,
     string subject,
     string message,
     record {

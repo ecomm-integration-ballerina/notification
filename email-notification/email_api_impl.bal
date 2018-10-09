@@ -25,6 +25,7 @@ public function sendEmail (http:Request req, Notification notification)
     messageRequest.cc = notification.cc;
     messageRequest.subject = notification.subject;
     
+    string failedParty = notification.failedParty;
     string targetParty = notification.targetResponse.party;
     string sourceParty = notification.sourceRequest.party;
     string message = notification.message;
@@ -35,7 +36,7 @@ public function sendEmail (http:Request req, Notification notification)
     xml causeTable = xml `<tr><td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Failure</td></tr>`;
     foreach i, party in parties {
         xml td;
-        if (party == targetParty) {
+        if (party == failedParty) {
             td = xml `<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">x</td>`;
         } else {
             td = xml `<td style="text-align: center;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2"></td>`;
@@ -46,7 +47,9 @@ public function sendEmail (http:Request req, Notification notification)
         causeHeaderTable.setChildren(causeHeaderTable.* + td);
     }
 
-    xml targetResponseTable = xml `<table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
+    xml targetResponseTable = xml `<div id="res">
+        <h4>Response from {{targetParty}} to {{sourceParty}}</h4>
+        <table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
             <tr> 
                 <td width="50" style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Code</td>
 				<td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.targetResponse.sc}}</td>
@@ -55,7 +58,24 @@ public function sendEmail (http:Request req, Notification notification)
                 <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Payload</td>
 				<td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.targetResponse.payload}}</td>
             </tr>
-        </table>`;
+        </table>
+    </div>`;
+
+    if (failedParty == "Network") {
+        targetResponseTable = xml `<div id="res">
+            <h4>Network Failure</h4>
+            <table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
+            <tr> 
+                <td width="50" style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Code</td>
+                <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.targetResponse.sc}}</td>
+            </tr>	
+            <tr> 
+                <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">Message</td>
+                <td style="text-align: left;padding: 8px;border: 1px solid #ddd;background-color: #f2f2f2">{{notification.targetResponse.payload}}</td>
+            </tr>
+        </table>
+    </div>`;
+    }   
 
     xml sourceRequestTable = xml `<table style="border-collapse: collapse;width: 100%; border: 1px solid #ddd;">
             <tr> 
@@ -72,7 +92,7 @@ public function sendEmail (http:Request req, Notification notification)
                     {{causeHeaderTable}}
                     {{causeTable}}
                 </table>
-                <div id="res"><h4>Response from {{targetParty}} to {{sourceParty}}</h4>{{targetResponseTable}}</div>
+                {{targetResponseTable}}
                 <div id="req"><h4>Request from {{sourceParty}} to {{targetParty}} </h4>{{sourceRequestTable}}</div>
                 <div id="thank-you">
                     <br/><p>Thank you</p>
